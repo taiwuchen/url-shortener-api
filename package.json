@@ -1,0 +1,12 @@
+{
+  "name": "url-shortener-api",
+  "version": "1.0.0",
+  "description": "A URL shortener built with TypeScript and Node.js. It uses an PostgreSQL database and focuses on the essential functionality of converting long URLs into shortened versions and redirecting users based on the generated short codes.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
