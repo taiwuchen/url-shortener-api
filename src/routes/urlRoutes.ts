@@ -26,18 +26,26 @@ router.get("/:shortCode", async (req, res) => {
   const { shortCode } = req.params;
   try {
     const result = await pool.query(
-      "SELECT original_url FROM urls WHERE short_code = $1",
+      "SELECT id, original_url FROM urls WHERE short_code = $1",
       [shortCode]
     );
     if (result.rows.length > 0) {
-      const originalUrl = result.rows[0].original_url;
-      res.redirect(originalUrl);
+      const url = result.rows[0];
+      
+      // Insert an analytics record for this redirect:
+      await pool.query(
+        "INSERT INTO analytics (url_id, device, os, location) VALUES ($1, $2, $3, $4)",
+        [url.id, req.headers["user-agent"] || "unknown", "unknown", "unknown"]
+      );
+
+      // Redirect to the original URL
+      res.redirect(url.original_url);
     } else {
       res.status(404).send("URL not found");
     }
   } catch (error) {
-    console.error("Error retrieving URL:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("Error during redirect:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
