@@ -19,42 +19,87 @@ router.get(
   adminAuth,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Example analytic query: total number of URLs shortened.
-      const totalResult = await pool.query("SELECT COUNT(*) AS total_urls FROM urls");
-      const totalUrls = totalResult.rows[0].total_urls;
+      // Total requests logged in analytics
+      const totalResult = await pool.query("SELECT COUNT(*) AS total_requests FROM analytics");
+      const totalRequests = totalResult.rows[0].total_requests;
 
-      // Dummy responses for additional analytics metrics.
+      // Requests per week
+      const weekResult = await pool.query(
+        `SELECT date_trunc('week', request_time) AS week, COUNT(*) AS count 
+         FROM analytics 
+         GROUP BY week 
+         ORDER BY week`
+      );
+      const requestsPerWeek = weekResult.rows.map(row => ({
+        week: row.week,
+        count: Number(row.count)
+      }));
+
+      // Requests per month
+      const monthResult = await pool.query(
+        `SELECT date_trunc('month', request_time) AS month, COUNT(*) AS count 
+         FROM analytics 
+         GROUP BY month 
+         ORDER BY month`
+      );
+      const requestsPerMonth = monthResult.rows.map(row => ({
+        month: row.month,
+        count: Number(row.count)
+      }));
+
+      // Device distribution
+      const deviceResult = await pool.query(
+        `SELECT device, COUNT(*) AS count 
+         FROM analytics 
+         GROUP BY device`
+      );
+      const deviceDistribution: Record<string, number> = {};
+      deviceResult.rows.forEach(row => {
+        deviceDistribution[row.device || "unknown"] = Number(row.count);
+      });
+
+      // OS distribution
+      const osResult = await pool.query(
+        `SELECT os, COUNT(*) AS count 
+         FROM analytics 
+         GROUP BY os`
+      );
+      const osDistribution: Record<string, number> = {};
+      osResult.rows.forEach(row => {
+        osDistribution[row.os || "unknown"] = Number(row.count);
+      });
+
+      // Geographical distribution
+      const geoResult = await pool.query(
+        `SELECT location, COUNT(*) AS count 
+         FROM analytics 
+         GROUP BY location`
+      );
+      const geographicalDistribution: Record<string, number> = {};
+      geoResult.rows.forEach(row => {
+        geographicalDistribution[row.location || "unknown"] = Number(row.count);
+      });
+
+      // Additional metric example: Top 5 shortened URLs by request count
+      const topUrlsResult = await pool.query(
+        `SELECT u.short_code, COUNT(a.id) AS count 
+         FROM analytics a 
+         JOIN urls u ON a.url_id = u.id 
+         GROUP BY u.short_code 
+         ORDER BY count DESC 
+         LIMIT 5`
+      );
+
       const analyticsData = {
-        totalUrls,
-        requestsPerWeek: [
-          // In a real system, you would query an analytics table grouping by week.
-          { week: "2023-W40", count: 10 },
-          { week: "2023-W41", count: 15 }
-        ],
-        requestsPerMonth: [
-          // Similarly, group by month from an analytics table.
-          { month: "2023-10", count: 40 }
-        ],
-        deviceDistribution: {
-          desktop: 70,
-          mobile: 25,
-          tablet: 5
-        },
-        osDistribution: {
-          Windows: 50,
-          iOS: 30,
-          Android: 20
-        },
-        geographicalDistribution: {
-          USA: 40,
-          Canada: 20,
-          UK: 15,
-          Germany: 10,
-          Others: 15
-        },
-        additionalMetric1: "Example Metric 1 Value",
-        additionalMetric2: "Example Metric 2 Value"
-      };
+        totalRequests,
+        requestsPerWeek,
+        requestsPerMonth,
+        deviceDistribution,
+        osDistribution,
+        geographicalDistribution,
+        topUrls: topUrlsResult.rows,
+};
+      
 
       res.json(analyticsData);
     } catch (error) {
