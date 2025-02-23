@@ -34,6 +34,18 @@ export async function initializeDatabase(): Promise<void> {
                 user_id INTEGER REFERENCES users(id)
             );
         `);
+        
+        // Create the analytics table to log requests for a shortened url
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS analytics (
+                id SERIAL PRIMARY KEY,
+                url_id INTEGER REFERENCES urls(id),
+                request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                device TEXT,
+                os TEXT,
+                location TEXT
+            );
+        `);
 
         console.log('Database schema initialized successfully.');
     } catch (error) {
