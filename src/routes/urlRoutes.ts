@@ -2,6 +2,7 @@ import { Router } from "express";
 import shortid from "shortid";
 import pool from "../database";
 import { authMiddleware } from "../middleware/authMiddleware";
+import geoip from "geoip-lite";
 
 const router = Router();
 
@@ -32,19 +33,24 @@ router.get("/:shortCode", async (req, res) => {
     );
     if (result.rows.length > 0) {
       const url = result.rows[0];
-      // Use the user-agent header as both device and OS info
       const userAgent = req.headers["user-agent"] || "unknown";
-
-      // Extract client IP address
       const ipAddress = req.ip || "unknown";
 
-      // Insert an analytics record using the user-agent for both device and os
+      // Lookup geographical information using geoip-lite
+      let location = "unknown";
+      if (ipAddress !== "unknown") {
+        const geo = geoip.lookup(ipAddress);
+        if (geo) {
+          location = `${geo.city || "unknown"}, ${geo.country || "unknown"}`;
+        }
+      }
+
+      // Log analytics record with geographical location
       await pool.query(
         "INSERT INTO analytics (url_id, device, os, location) VALUES ($1, $2, $3, $4)",
-        [url.id, userAgent, userAgent, ipAddress]
+        [url.id, userAgent, userAgent, location]
       );
 
-      // Redirect to the original URL
       res.redirect(url.original_url);
     } else {
       res.status(404).send("URL not found");
