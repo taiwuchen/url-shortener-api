@@ -1,18 +1,19 @@
 import { Router } from "express";
 import shortid from "shortid";
 import pool from "../database";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
-// Route to shorten a URL
-router.post("/shorten", async (req, res) => {
-  const { originalUrl, userId } = req.body;
+// Route to shorten a URL (only accessible to logged-in users)
+router.post("/shorten", authMiddleware, async (req, res) => {
+  const { originalUrl } = req.body;
   const shortCode = shortid.generate();
 
   try {
     await pool.query(
-      "INSERT INTO urls (short_code, original_url, user_id) VALUES ($1, $2, $3)",
-      [shortCode, originalUrl, userId]
+      "INSERT INTO urls (short_code, original_url) VALUES ($1, $2)",
+      [shortCode, originalUrl]
     );
     res.status(201).json({ shortUrl: `http://localhost:3000/${shortCode}` });
   } catch (error) {
