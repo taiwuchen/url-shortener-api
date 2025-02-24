@@ -21,7 +21,8 @@ export async function initializeDatabase(): Promise<void> {
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                admin_password TEXT
             );
         `);
 
@@ -30,8 +31,7 @@ export async function initializeDatabase(): Promise<void> {
             CREATE TABLE IF NOT EXISTS urls (
                 id SERIAL PRIMARY KEY,
                 short_code TEXT UNIQUE NOT NULL,
-                original_url TEXT NOT NULL,
-                user_id INTEGER REFERENCES users(id)
+                original_url TEXT NOT NULL
             );
         `);
         
