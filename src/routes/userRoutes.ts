@@ -1,20 +1,21 @@
 import { Router, Request, Response, NextFunction } from "express";
 import pool from "../database";
+import jwt from "jsonwebtoken";
 
 const router = Router();
 
 // User Registration
 router.post(
   "/register", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { username, password } = req.body;
+    const { username, password, adminPassword } = req.body;
     if (!username || !password) {
       res.status(400).json({ error: "Username and password are required" });
       return;
     }
     try {
       await pool.query(
-        "INSERT INTO users (username, password) VALUES ($1, $2)",
-        [username, password]
+        "INSERT INTO users (username, password, admin_password) VALUES ($1, $2, $3)",
+        [username, password, adminPassword || null]
       );
       res.status(201).json({ message: "User registered successfully" });
     } catch (error: any) {
@@ -31,8 +32,9 @@ router.post(
 
 // User Login
 router.post(
-  "/login", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const { username, password } = req.body;
+  "/login", 
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { username, password, adminPassword } = req.body;
     if (!username || !password) {
       res.status(400).json({ error: "Username and password are required" });
       return;
@@ -42,11 +44,32 @@ router.post(
         "SELECT * FROM users WHERE username = $1 AND password = $2",
         [username, password]
       );
+
       if (result.rows.length === 0) {
         res.status(401).json({ error: "Invalid credentials" });
-      } else {
-        res.status(200).json({ message: "User logged in successfully" });
+        return;
       }
+
+      const user = result.rows[0];
+      // Default as regular user
+      let isAdmin = false;
+
+      // Check if the user record has an admin password set and if the provided adminPassword matches
+      if (user.admin_password !== null && adminPassword) {
+        if (adminPassword === user.admin_password) {
+          isAdmin = true;
+        } else {
+          res.status(401).json({ error: "Admin login rejected: Incorrect admin password" });
+          return;
+        }
+      }
+
+      const token = jwt.sign(
+        { id: user.id, username: user.username, isAdmin },
+        process.env.JWT_SECRET as string,
+        { expiresIn: "1h" }
+      );
+      res.status(200).json({ message: "User logged in successfully", token });
     } catch (error) {
       console.error("Error logging in:", error);
       next(error);

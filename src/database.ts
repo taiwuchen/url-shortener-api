@@ -21,7 +21,8 @@ export async function initializeDatabase(): Promise<void> {
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                admin_password TEXT
             );
         `);
 
@@ -30,8 +31,19 @@ export async function initializeDatabase(): Promise<void> {
             CREATE TABLE IF NOT EXISTS urls (
                 id SERIAL PRIMARY KEY,
                 short_code TEXT UNIQUE NOT NULL,
-                original_url TEXT NOT NULL,
-                user_id INTEGER REFERENCES users(id)
+                original_url TEXT NOT NULL
+            );
+        `);
+        
+        // Create the analytics table to log requests for a shortened url
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS analytics (
+                id SERIAL PRIMARY KEY,
+                url_id INTEGER REFERENCES urls(id),
+                request_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                device TEXT,
+                os TEXT,
+                location TEXT
             );
         `);
 
