@@ -1,21 +1,25 @@
 import { Router, Request, Response, NextFunction } from "express";
 import pool from "../database";
+import { authMiddleware } from "../middleware/authMiddleware";
+import { JwtPayload } from "jsonwebtoken";
 
 const router = Router();
 
-// Simple middleware to check for admin access using a custom header.
-// For demonstration, a request must include header "x-admin-key" with value "secret"
+// Admin authorization middleware using JWT payload
 const adminAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (req.headers["x-admin-key"] === "secret") {
-    next();
+  const user = req.user as JwtPayload;
+  if (user && user.isAdmin) {
+    return next();
   } else {
     res.status(403).json({ error: "Forbidden: Admins only." });
+    return;
   }
 };
 
-// Returns analytics data for shortened URLs.
+// Protect the admin analytics endpoint with both JWT and admin check.
 router.get(
   "/admin/analytics",
+  authMiddleware,
   adminAuth,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -80,7 +84,7 @@ router.get(
         geographicalDistribution[row.location || "unknown"] = Number(row.count);
       });
 
-      // Additional metric example: Top 5 shortened URLs by request count
+      // Additional Metric 1: Top 5 shortened URLs by request count
       const topUrlsResult = await pool.query(
         `SELECT u.short_code, COUNT(a.id) AS count 
          FROM analytics a 
@@ -90,6 +94,17 @@ router.get(
          LIMIT 5`
       );
 
+      // Additional Metric 2: Average requests per shortened URL
+      const avgResult = await pool.query(
+        `SELECT AVG(url_counts.count)::numeric(10,2) AS average_requests
+         FROM (
+           SELECT COUNT(*) AS count 
+           FROM analytics 
+           GROUP BY url_id
+         ) AS url_counts`
+      );
+      const averageRequests = avgResult.rows[0]?.average_requests || 0;
+
       const analyticsData = {
         totalRequests,
         requestsPerWeek,
@@ -98,8 +113,8 @@ router.get(
         osDistribution,
         geographicalDistribution,
         topUrls: topUrlsResult.rows,
-};
-      
+        averageRequests
+      };
 
       res.json(analyticsData);
     } catch (error) {
