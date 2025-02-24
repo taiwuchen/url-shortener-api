@@ -60,7 +60,7 @@ Start the application with:
 npx ts-node src/app.ts
 ```
 
-### API Documentation
+## API Documentation
 The API is fully documented using OpenAPI.
 Render **[openapi.yaml](openapi.yaml)** with a tool like Swagger UI or Redoc.
 
