@@ -74,7 +74,12 @@ router.post(
         process.env.JWT_SECRET as string,
         { expiresIn: "1h" }
       );
-      res.status(200).json({ message: "User logged in successfully", token });
+      
+      const loginMessage = isAdmin
+        ? "Admin logged in successfully"
+        : "User logged in successfully";
+
+      res.status(200).json({ message: loginMessage, token });
     } catch (error) {
       console.error("Error logging in:", error);
       next(error);
