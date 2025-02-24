@@ -35,10 +35,13 @@ router.get("/:shortCode", async (req, res) => {
       // Use the user-agent header as both device and OS info
       const userAgent = req.headers["user-agent"] || "unknown";
 
+      // Extract client IP address
+      const ipAddress = req.ip || "unknown";
+
       // Insert an analytics record using the user-agent for both device and os
       await pool.query(
         "INSERT INTO analytics (url_id, device, os, location) VALUES ($1, $2, $3, $4)",
-        [url.id, userAgent, userAgent, "unknown"]
+        [url.id, userAgent, userAgent, ipAddress]
       );
 
       // Redirect to the original URL
