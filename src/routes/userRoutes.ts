@@ -12,10 +12,15 @@ router.post(
       res.status(400).json({ error: "Username and password are required" });
       return;
     }
+    // Reject any attempt to register an admin account
+    if (adminPassword) {
+      res.status(400).json({ error: "Admin registration is disabled" });
+      return;
+    }
     try {
       await pool.query(
-        "INSERT INTO users (username, password, admin_password) VALUES ($1, $2, $3)",
-        [username, password, adminPassword || null]
+        "INSERT INTO users (username, password, admin_password) VALUES ($1, $2, NULL)",
+        [username, password]
       );
       res.status(201).json({ message: "User registered successfully" });
     } catch (error: any) {
