@@ -9,7 +9,7 @@ describe('URL Shortener API Integration Tests', () => {
   describe('POST /shorten', () => {
     it('should return a shortened URL when provided with a valid long URL and valid authentication', async () => {
       // The JWT token has to be working
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwidXNlcm5hbWUiOiJ0ZXN0VXNlciIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDAzNzk5ODUsImV4cCI6MTc0MDM4MzU4NX0.eu0eiaorZGuhE4EoLx0_trB6fUxpTbejWKvkpmZR8Yw';
+      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJ0ZXN0dXNlciIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE3NDAzODQzNTUsImV4cCI6MTc0MDM4Nzk1NX0._Is985XaV4KUdrNiK7qCHzA8GS1v1-c1W91dxgC8GLo';
       const response = await request(app)
         .post('/shorten')
         .set('Authorization', `Bearer ${token}`)
