@@ -84,12 +84,12 @@ router.get(
         geographicalDistribution[row.location || "unknown"] = Number(row.count);
       });
 
-      // Additional Metric 1: Top 5 shortened URLs by request count
+      // Additional Metric 1: Top 5 URL by request count
       const topUrlsResult = await pool.query(
-        `SELECT u.short_code, COUNT(a.id) AS count 
+        `SELECT u.original_url, COUNT(a.id) AS count 
          FROM analytics a 
          JOIN urls u ON a.url_id = u.id 
-         GROUP BY u.short_code 
+         GROUP BY u.original_url 
          ORDER BY count DESC 
          LIMIT 5`
       );

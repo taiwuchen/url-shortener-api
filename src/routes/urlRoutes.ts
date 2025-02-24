@@ -32,11 +32,13 @@ router.get("/:shortCode", async (req, res) => {
     );
     if (result.rows.length > 0) {
       const url = result.rows[0];
-      
-      // Insert an analytics record for this redirect:
+      // Use the user-agent header as both device and OS info
+      const userAgent = req.headers["user-agent"] || "unknown";
+
+      // Insert an analytics record using the user-agent for both device and os
       await pool.query(
         "INSERT INTO analytics (url_id, device, os, location) VALUES ($1, $2, $3, $4)",
-        [url.id, req.headers["user-agent"] || "unknown", "unknown", "unknown"]
+        [url.id, userAgent, userAgent, "unknown"]
       );
 
       // Redirect to the original URL
